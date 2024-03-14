@@ -41,7 +41,8 @@ resource "aws_db_instance" "this" {
   skip_final_snapshot = true
   apply_immediately   = true
   storage_encrypted   = true
-  backup_retention_period = 7
+  backup_retention_period = 35
+  deletion_protection = true
 }
 
 resource "aws_ecs_service" "retool" {
