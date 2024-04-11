@@ -4,6 +4,7 @@ resource "aws_lb" "this" {
 
   security_groups = [aws_security_group.alb.id]
   subnets         = var.subnet_ids
+  drop_invalid_header_fields = true
 }
 
 resource "aws_lb_listener" "this" {
