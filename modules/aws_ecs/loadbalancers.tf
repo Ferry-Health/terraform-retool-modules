@@ -4,6 +4,8 @@ resource "aws_lb" "this" {
 
   security_groups = [aws_security_group.alb.id]
   subnets         = var.public_subnet_ids
+
+  drop_invalid_header_fields = true
 }
 
 resource "aws_lb_listener" "this" {
@@ -68,6 +70,4 @@ resource "aws_lb_target_group" "this" {
     healthy_threshold   = 3
     unhealthy_threshold = 2
   }
-
-  drop_invalid_header_fields = true
 }
