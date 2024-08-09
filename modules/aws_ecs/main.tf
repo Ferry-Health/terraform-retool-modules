@@ -43,6 +43,7 @@ resource "aws_db_instance" "this" {
   storage_encrypted   = true
   backup_retention_period = 35
   deletion_protection = true
+  max_allocated_storage = 100
 }
 
 resource "aws_ecs_service" "retool" {
