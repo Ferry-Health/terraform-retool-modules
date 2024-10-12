@@ -123,12 +123,6 @@ variable "rds_instance_class" {
   description = "Instance class for RDS. Defaults to `db.m6g.large`"
 }
 
-variable "rds_instance_engine_version" {
-  type        = string
-  default     = "13.7"
-  description = "Version of the Postgres RDS instance. Defaults to 13.7"
-}
-
 variable "rds_instance_auto_minor_version_upgrade" {
   type = bool
   default = true
