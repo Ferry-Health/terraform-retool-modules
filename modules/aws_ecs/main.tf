@@ -40,7 +40,7 @@ resource "aws_db_instance" "this" {
   skip_final_snapshot = true
   apply_immediately   = true
   storage_encrypted   = true
-  backup_retention_period = 35
+  backup_retention_period = 21
   deletion_protection = true
   max_allocated_storage = 100
 }
