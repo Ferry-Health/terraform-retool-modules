@@ -17,7 +17,7 @@ resource "aws_cloudwatch_log_group" "this" {
 }
 
 resource "aws_db_subnet_group" "this" {
-  name = "${var.deployment_name}-retool"
+  name       = "${var.deployment_name}-retool"
   subnet_ids = var.private_subnet_ids
 }
 
@@ -37,12 +37,12 @@ resource "aws_db_instance" "this" {
   db_subnet_group_name         = aws_db_subnet_group.this.id
   performance_insights_enabled = var.rds_performance_insights_enabled
 
-  skip_final_snapshot = true
-  apply_immediately   = true
-  storage_encrypted   = true
+  skip_final_snapshot     = true
+  apply_immediately       = true
+  storage_encrypted       = true
   backup_retention_period = 21
-  deletion_protection = true
-  max_allocated_storage = 100
+  deletion_protection     = true
+  max_allocated_storage   = 100
 }
 
 resource "aws_ecs_service" "retool" {
@@ -72,13 +72,40 @@ resource "aws_ecs_service" "retool" {
     for_each = var.launch_type == "FARGATE" ? toset([1]) : toset([])
 
 
-    content {    
+    content {
       subnets = var.private_subnet_ids
       security_groups = [
         aws_security_group.containers.id
       ]
       assign_public_ip = true
     }
+  }
+
+  dynamic "service_connect_configuration" {
+    for_each = var.service_connect_namespace_arn == null ? [] : [1]
+
+    content {
+      enabled   = true
+      namespace = var.service_connect_namespace_arn
+
+      dynamic "log_configuration" {
+        for_each = var.service_connect_main_log_group_name == null ? [] : [1]
+
+        content {
+          log_driver = "awslogs"
+          options = {
+            awslogs-group         = var.service_connect_main_log_group_name
+            awslogs-region        = var.aws_region
+            awslogs-stream-prefix = "ecs"
+            awslogs-create-group  = "true"
+          }
+        }
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [availability_zone_rebalancing]
   }
 }
 
@@ -100,13 +127,26 @@ resource "aws_ecs_service" "jobs_runner" {
 
     for_each = var.launch_type == "FARGATE" ? toset([1]) : toset([])
 
-    content {    
+    content {
       subnets = var.private_subnet_ids
       security_groups = [
         aws_security_group.containers.id
       ]
       assign_public_ip = true
     }
+  }
+
+  dynamic "service_connect_configuration" {
+    for_each = var.service_connect_namespace_arn == null ? [] : [1]
+
+    content {
+      enabled   = true
+      namespace = var.service_connect_namespace_arn
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [availability_zone_rebalancing]
   }
 }
 
@@ -132,7 +172,7 @@ resource "aws_ecs_service" "workflows_backend" {
 
     for_each = var.launch_type == "FARGATE" ? toset([1]) : toset([])
 
-    content {    
+    content {
       subnets = var.private_subnet_ids
       security_groups = [
         aws_security_group.containers.id
@@ -160,7 +200,7 @@ resource "aws_ecs_service" "workflows_worker" {
 
     for_each = var.launch_type == "FARGATE" ? toset([1]) : toset([])
 
-    content {    
+    content {
       subnets = var.private_subnet_ids
       security_groups = [
         aws_security_group.containers.id
@@ -418,17 +458,17 @@ resource "aws_service_discovery_service" "retool_workflow_backend_service" {
 }
 
 module "temporal" {
-  count  = var.workflows_enabled && !var.use_exising_temporal_cluster ? 1 : 0
-  source = "./temporal"
-  deployment_name   = "${var.deployment_name}-temporal"
-  vpc_id = var.vpc_id
-  subnet_ids = var.private_subnet_ids
-  private_dns_namespace_id = aws_service_discovery_private_dns_namespace.retoolsvc[0].id
-  aws_cloudwatch_log_group_id = aws_cloudwatch_log_group.this.id
-  aws_region = var.aws_region
-  aws_ecs_cluster_id = aws_ecs_cluster.this.id
-  launch_type = var.launch_type
-  container_sg_id = aws_security_group.containers.id
+  count                          = var.workflows_enabled && !var.use_exising_temporal_cluster ? 1 : 0
+  source                         = "./temporal"
+  deployment_name                = "${var.deployment_name}-temporal"
+  vpc_id                         = var.vpc_id
+  subnet_ids                     = var.private_subnet_ids
+  private_dns_namespace_id       = aws_service_discovery_private_dns_namespace.retoolsvc[0].id
+  aws_cloudwatch_log_group_id    = aws_cloudwatch_log_group.this.id
+  aws_region                     = var.aws_region
+  aws_ecs_cluster_id             = aws_ecs_cluster.this.id
+  launch_type                    = var.launch_type
+  container_sg_id                = aws_security_group.containers.id
   aws_ecs_capacity_provider_name = var.launch_type == "EC2" ? aws_ecs_capacity_provider.this[0].name : null
-  task_propagate_tags = var.task_propagate_tags
+  task_propagate_tags            = var.task_propagate_tags
 }

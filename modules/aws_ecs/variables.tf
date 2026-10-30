@@ -124,8 +124,8 @@ variable "rds_instance_class" {
 }
 
 variable "rds_instance_auto_minor_version_upgrade" {
-  type = bool
-  default = true
+  type        = bool
+  default     = true
   description = "Whether to automatically upgrade the minor version of the Postgres RDS instance. Defaults to true."
 }
 
@@ -417,4 +417,16 @@ variable "alb_egress_rules" {
     }
   ]
   description = "Egress rules for load balancer"
+}
+
+variable "service_connect_namespace_arn" {
+  type        = string
+  default     = null
+  description = "Cloud Map namespace ARN. When set, the main service and jobs runner join ECS Service Connect as clients."
+}
+
+variable "service_connect_main_log_group_name" {
+  type        = string
+  default     = null
+  description = "CloudWatch log group for the main service's Service Connect proxy. Omit to leave Envoy logging unset."
 }
