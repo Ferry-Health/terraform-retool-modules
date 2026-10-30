@@ -45,11 +45,19 @@ resource "aws_iam_role" "service_role" {
   name               = "${var.deployment_name}-service-role"
   assume_role_policy = data.aws_iam_policy_document.service_role_assume_policy.json
   path               = "/"
+}
 
-  inline_policy {
-    name   = "${var.deployment_name}-service-policy"
-    policy = data.aws_iam_policy_document.service_role_policy.json
-  }
+resource "aws_iam_role_policy" "service_role" {
+  name   = "${var.deployment_name}-service-policy"
+  role   = aws_iam_role.service_role.name
+  policy = data.aws_iam_policy_document.service_role_policy.json
+}
+
+# Keeps the old inline_policy behavior: Terraform removes any other inline
+# policy someone attaches to this role outside this module.
+resource "aws_iam_role_policies_exclusive" "service_role" {
+  role_name    = aws_iam_role.service_role.name
+  policy_names = [aws_iam_role_policy.service_role.name]
 }
 
 # Execution Role for Fargate
@@ -88,11 +96,19 @@ resource "aws_iam_role" "ec2" {
   name               = "${var.deployment_name}-ec2-iam-role"
   assume_role_policy = data.aws_iam_policy_document.ec2_assume_policy.json
   path               = "/"
+}
 
-  inline_policy {
-    name   = "${var.deployment_name}-ec2-policy"
-    policy = data.aws_iam_policy_document.ec2_policy.json
-  }
+resource "aws_iam_role_policy" "ec2" {
+  count  = var.launch_type == "EC2" ? 1 : 0
+  name   = "${var.deployment_name}-ec2-policy"
+  role   = aws_iam_role.ec2[0].name
+  policy = data.aws_iam_policy_document.ec2_policy.json
+}
+
+resource "aws_iam_role_policies_exclusive" "ec2" {
+  count        = var.launch_type == "EC2" ? 1 : 0
+  role_name    = aws_iam_role.ec2[0].name
+  policy_names = [aws_iam_role_policy.ec2[0].name]
 }
 
 data "aws_iam_policy_document" "ec2_assume_policy" {
